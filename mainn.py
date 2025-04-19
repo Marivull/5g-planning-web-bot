@@ -12,10 +12,17 @@ logo_url = "https://github.com/Marivull/5g-planning-web-bot/raw/main/logo.png"
 response = requests.get(logo_url)
 logo = Image.open(BytesIO(response.content))
 
-# Display the logo
+# Display the logo with text
 st.image(logo, caption="5G Site Estimator Logo")
 
+# Title and introductory text
 st.title("📡 5G Site Estimator for Coverage & Capacity")
+st.markdown("""
+    **Misr University for Science and Technology**  
+    **College of Engineering**  
+    **Communication and Electronics Department**  
+    **5G Network Planning Project**
+""")
 
 # User Inputs Section
 with st.form(key="inputs_form"):
@@ -31,10 +38,10 @@ with st.form(key="inputs_form"):
         area = st.selectbox("Select Area:", ["Sidi Gaber", "Smouha", "Stanley", "Gleem", "Miami"])
 
     # Area Size, Frequency, and other parameters
-    area_km2 = st.number_input("Enter Area Size (km²):", min_value=0.1, value=5.0)
-    frequency_mhz = st.number_input("Enter Carrier Frequency (MHz):", min_value=600, max_value=5000, value=3500)
-    desired_rsrp = st.number_input("Enter Desired RSRP (dBm):", min_value=-130, max_value=0, value=-100)
-    population = st.number_input("Enter Population of the Area:", min_value=100, value=8000)
+    area_km2 = st.number_input("Enter Area Size (km²):", min_value=0.1, value=100.0)
+    frequency_mhz = st.number_input("Enter Carrier Frequency (MHz):", min_value=600, max_value=50000)
+    desired_rsrp = st.number_input("Enter Desired RSRP (dBm):", min_value=-130, max_value=0)
+    population = st.number_input("Enter Population of the Area:", min_value=100, value=1000000)
     penetration_rate = st.slider("5G Penetration Rate (%):", min_value=0, max_value=100, value=20)
     antenna_type = st.selectbox("Select Antenna Type:", ['8T8R', '32T32R', '64T64R', '128T128R'])
 
@@ -93,4 +100,5 @@ if submit_button:
     st.write(f"📶 **Estimated Site Throughput:** {site_throughput_bps / 1e6:.2f} Mbps")
     st.write(f"👥 **Active 5G Users:** {int(active_users)}")
     st.write(f"🗼 **Number of Sites Needed for Capacity:** {num_sites_capacity}")
+
 
