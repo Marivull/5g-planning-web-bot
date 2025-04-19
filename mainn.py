@@ -25,31 +25,30 @@ st.markdown("""
 """)
 
 # User Inputs Section
-with st.form(key="inputs_form"):
-    # Location Inputs
-    country = st.selectbox("Select Country:", ["Egypt"])
-    city = st.selectbox("Select City:", ["Cairo", "Giza", "Alexandria"])
+# Location Inputs
+country = st.selectbox("Select Country:", ["Egypt"])
+city = st.selectbox("Select City:", ["Cairo", "Giza", "Alexandria"])
 
-    # Define areas dynamically based on the city selected
-    city_areas = {
-        "Cairo": ["Nasr City", "Heliopolis", "Maadi", "Zamalek", "Downtown"],
-        "Giza": ["Dokki", "Mohandessin", "6th of October", "Sheikh Zayed"],
-        "Alexandria": ["Sidi Gaber", "Smouha", "Stanley", "Gleem", "Miami"]
-    }
+# Define areas dynamically based on the city selected
+city_areas = {
+    "Cairo": ["Nasr City", "Heliopolis", "Maadi", "Zamalek", "Downtown"],
+    "Giza": ["Dokki", "Mohandessin", "6th of October", "Sheikh Zayed"],
+    "Alexandria": ["Sidi Gaber", "Smouha", "Stanley", "Gleem", "Miami"]
+}
 
-    # Update the areas dynamically based on selected city
-    area = st.selectbox("Select Area:", city_areas[city])
+# Update the areas dynamically based on selected city
+area = st.selectbox("Select Area:", city_areas[city])
 
-    # Area Size, Frequency, and other parameters
-    area_km2 = st.number_input("Enter Area Size (km²):", min_value=0.1, value=100.0)
-    frequency_mhz = st.number_input("Enter Carrier Frequency (MHz):", min_value=600, max_value=50000)
-    desired_rsrp = st.number_input("Enter Desired RSRP (dBm):", min_value=-130, max_value=0)
-    population = st.number_input("Enter Population of the Area:", min_value=100, value=1000000)
-    penetration_rate = st.slider("5G Penetration Rate (%):", min_value=0, max_value=100, value=20)
-    antenna_type = st.selectbox("Select Antenna Type:", ['8T8R', '32T32R', '64T64R', '128T128R'])
+# Area Size, Frequency, and other parameters
+area_km2 = st.number_input("Enter Area Size (km²):", min_value=0.1, value=100.0)
+frequency_mhz = st.number_input("Enter Carrier Frequency (MHz):", min_value=600, max_value=50000)
+desired_rsrp = st.number_input("Enter Desired RSRP (dBm):", min_value=-130, max_value=0)
+population = st.number_input("Enter Population of the Area:", min_value=100, value=1000000)
+penetration_rate = st.slider("5G Penetration Rate (%):", min_value=0, max_value=100, value=20)
+antenna_type = st.selectbox("Select Antenna Type:", ['8T8R', '32T32R', '64T64R', '128T128R'])
 
-    # Submit Button
-    submit_button = st.form_submit_button("Calculate Results")
+# Submit Button
+submit_button = st.button("Calculate Results")
 
 # Only show results if the form is submitted
 if submit_button:
