@@ -1,16 +1,20 @@
 import streamlit as st
-import math
 from PIL import Image
+import requests
+from io import BytesIO
+import math
 
 # Set up the Streamlit page layout
 st.set_page_config(page_title="5G Site Estimator for Coverage & Capacity", layout="centered")
 
-# Add the logo image
-logo_path = r"C:\Users\MARIOMA\Desktop\logo.png"  # استخدام المسار الكامل للصورة
-logo = Image.open(logo_path)
-st.image(logo, use_column_width=True)
+# Load logo image from GitHub
+logo_url = "https://github.com/Marivull/5g-planning-web-bot/raw/main/logo.png"
+response = requests.get(logo_url)
+logo = Image.open(BytesIO(response.content))
 
-# Title
+# Display the logo
+st.image(logo, caption="5G Site Estimator Logo")
+
 st.title("📡 5G Site Estimator for Coverage & Capacity")
 
 # User Inputs Section
