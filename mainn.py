@@ -1,9 +1,16 @@
 import streamlit as st
 import math
+from PIL import Image
 
 # Set up the Streamlit page layout
 st.set_page_config(page_title="5G Site Estimator for Coverage & Capacity", layout="centered")
 
+# Add the logo image
+logo_path = r"C:\Users\MARIOMA\Desktop\logo.png"  # استخدام المسار الكامل للصورة
+logo = Image.open(logo_path)
+st.image(logo, use_column_width=True)
+
+# Title
 st.title("📡 5G Site Estimator for Coverage & Capacity")
 
 # User Inputs Section
@@ -82,3 +89,4 @@ if submit_button:
     st.write(f"📶 **Estimated Site Throughput:** {site_throughput_bps / 1e6:.2f} Mbps")
     st.write(f"👥 **Active 5G Users:** {int(active_users)}")
     st.write(f"🗼 **Number of Sites Needed for Capacity:** {num_sites_capacity}")
+
