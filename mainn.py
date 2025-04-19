@@ -30,12 +30,15 @@ with st.form(key="inputs_form"):
     country = st.selectbox("Select Country:", ["Egypt"])
     city = st.selectbox("Select City:", ["Cairo", "Giza", "Alexandria"])
 
-    if city == "Cairo":
-        area = st.selectbox("Select Area:", ["Nasr City", "Heliopolis", "Maadi", "Zamalek", "Downtown"])
-    elif city == "Giza":
-        area = st.selectbox("Select Area:", ["Dokki", "Mohandessin", "6th of October", "Sheikh Zayed"])
-    else:
-        area = st.selectbox("Select Area:", ["Sidi Gaber", "Smouha", "Stanley", "Gleem", "Miami"])
+    # Define areas dynamically based on the city selected
+    city_areas = {
+        "Cairo": ["Nasr City", "Heliopolis", "Maadi", "Zamalek", "Downtown"],
+        "Giza": ["Dokki", "Mohandessin", "6th of October", "Sheikh Zayed"],
+        "Alexandria": ["Sidi Gaber", "Smouha", "Stanley", "Gleem", "Miami"]
+    }
+
+    # Update the areas dynamically based on selected city
+    area = st.selectbox("Select Area:", city_areas[city])
 
     # Area Size, Frequency, and other parameters
     area_km2 = st.number_input("Enter Area Size (km²):", min_value=0.1, value=100.0)
@@ -100,5 +103,3 @@ if submit_button:
     st.write(f"📶 **Estimated Site Throughput:** {site_throughput_bps / 1e6:.2f} Mbps")
     st.write(f"👥 **Active 5G Users:** {int(active_users)}")
     st.write(f"🗼 **Number of Sites Needed for Capacity:** {num_sites_capacity}")
-
-
