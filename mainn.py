@@ -12,10 +12,8 @@ logo_url = "https://github.com/Marivull/5g-planning-web-bot/raw/main/logo.png"
 response = requests.get(logo_url)
 logo = Image.open(BytesIO(response.content))
 
-# Display the logo with text
+# Display the logo with text at top of main page
 st.image(logo, caption="5G Site Estimator Logo")
-
-# Title and introductory text
 st.title("📡 5G Site Estimator for Coverage & Capacity")
 st.markdown("""
     **Misr University for Science and Technology**  
@@ -24,81 +22,116 @@ st.markdown("""
     **5G Network Planning Project**
 """)
 
-# User Inputs Section
-# Location Inputs
-country = st.selectbox("Select Country:", ["Egypt"])
-city = st.selectbox("Select City:", ["Cairo", "Giza", "Alexandria"])
+# Sidebar inputs
+st.sidebar.header("📥 Input Parameters")
 
-# Define areas dynamically based on the city selected
 city_areas = {
-    "Cairo": ["Nasr City", "Heliopolis", "Maadi", "Zamalek", "Downtown"],
-    "Giza": ["Dokki", "Mohandessin", "6th of October", "Sheikh Zayed"],
-    "Alexandria": ["Sidi Gaber", "Smouha", "Stanley", "Gleem", "Miami"]
+    "Cairo": {"Nasr City": "Urban", "Heliopolis": "Urban", "Maadi": "Urban", "Zamalek": "Urban"},
+    "Giza": {"Dokki": "Urban", "Mohandessin": "Urban", "6th of October": "Urban", "Sheikh Zayed": "Urban"},
+    "Alexandria": {"Stanley": "Dense Urban", "Sidi Gaber": "Urban", "Smouha": "Urban"},
+ 
 }
 
-# Update the areas dynamically based on selected city
-area = st.selectbox("Select Area:", city_areas[city])
+city = st.sidebar.selectbox("Select City", list(city_areas.keys()))
+area = st.sidebar.selectbox("Select Area", list(city_areas[city].keys()))
+urban_type = city_areas[city][area]
 
-# Area Size, Frequency, and other parameters
-area_km2 = st.number_input("Enter Area Size (km²):", min_value=0.1, value=100.0)
-frequency_mhz = st.number_input("Enter Carrier Frequency (MHz):", min_value=600, max_value=50000)
-desired_rsrp = st.number_input("Enter Desired RSRP (dBm):", min_value=-130, max_value=0)
-population = st.number_input("Enter Population of the Area:", min_value=100, value=1000000)
-penetration_rate = st.slider("5G Penetration Rate (%):", min_value=0, max_value=100, value=20)
-antenna_type = st.selectbox("Select Antenna Type:", ['8T8R', '32T32R', '64T64R', '128T128R'])
+area_km2 = st.sidebar.number_input("Area Size (km²)", min_value=0.1, value=5.0, step=0.1)
+population = st.sidebar.number_input("Population", min_value=100, value=218000, step=1000)
+penetration_rate = st.sidebar.slider("5G Penetration Rate (%)", 0, 100, 15)
+traffic_per_user = st.sidebar.number_input("Average Traffic per User (Mbps)", min_value=0.1, value=2.0, step=0.1)
+antenna_type = st.sidebar.selectbox("Antenna Type", ["Directive", "Omni"])
 
-# Submit Button
-submit_button = st.button("Calculate Results")
+st.sidebar.header("⚙️ Capacity Parameters")
 
-# Only show results if the form is submitted
-if submit_button:
-    # Constants and adjustments
-    antenna_scaling = {'8T8R': 1.0, '32T32R': 1.5, '64T64R': 2.0, '128T128R': 3.0}
-    scaling_factor = antenna_scaling[antenna_type]
+bandwidth_mhz = st.sidebar.selectbox("Bandwidth (MHz)", options=[10, 20, 40, 60, 80, 100], index=3)
+mod_order = st.sidebar.selectbox("Modulation Order (bits per symbol)", options=[2, 4, 6, 8, 10], index=3)
+mimo_layers = st.sidebar.slider("Number of MIMO Layers", min_value=1, max_value=16, value=8)
+utilization = st.sidebar.slider("Resource Utilization (%)", min_value=10, max_value=100, value=70) / 100.0
+overhead = st.sidebar.slider("Overhead (%)", min_value=5, max_value=30, value=14) / 100.0
+sectors_per_site = st.sidebar.selectbox("Sectors per Site", options=[1, 3], index=1)
 
-    # Adjusted coverage radius function
-    def calculate_coverage_radius(freq_mhz, rsrp):
-        base_radius = 0.5  # Adjusted for urban area with better coverage
-        freq_adjustment = (3500 / freq_mhz) ** 0.5  # Frequency effect
-        rsrp_adjustment = (abs(rsrp + 110) / 10) ** 0.5  # Better RSRP = more radius
-        radius = base_radius * freq_adjustment * rsrp_adjustment
-        return max(0.3, min(radius, 0.6))  # Adjusted to be within realistic limits
+duplex_mode = st.sidebar.selectbox("Duplex Mode", ["TDD", "FDD"], index=0)
+if duplex_mode == "FDD":
+    overhead = min(overhead, 0.12)  # usually lower overhead in FDD
 
-    coverage_radius_km = calculate_coverage_radius(frequency_mhz, desired_rsrp)
+# Band parameters for coverage calculation
+if bandwidth_mhz == 10:
+    n_rb = 52
+elif bandwidth_mhz == 20:
+    n_rb = 106
+elif bandwidth_mhz == 40:
+    n_rb = 217
+elif bandwidth_mhz == 60:
+    n_rb = 326
+elif bandwidth_mhz == 80:
+    n_rb = 435
+elif bandwidth_mhz == 100:
+    n_rb = 546
+else:
+    n_rb = 217  # default 40 MHz
 
-    # Calculate the number of sites based on coverage
-    def calculate_number_of_sites(area_km2, coverage_radius_km):
-        # Adjusting for ISD (inter-site distance)
-        ideal_isd_km = coverage_radius_km * 2  # Assuming sites need to be 2x the radius apart
-        area_per_site = (math.sqrt(3) / 2) * (ideal_isd_km ** 2)
-        return math.ceil(area_km2 / area_per_site)
+bandwidth_hz = bandwidth_mhz * 1e6
 
-    num_sites_coverage = calculate_number_of_sites(area_km2, coverage_radius_km)
+# Show results after button press
+if st.button("🚀 Show Results"):
+    # Link budget parameters (fixed)
+    tx_power = 49
+    tx_gain = 24
+    cable_loss = 0
+    penetration_loss = 22
+    foliage_loss = 7.5
+    body_loss = 3
+    interference_margin = 6
+    rain_margin = 0
+    shadow_margin = 6
+    rx_gain = 0
+    noise_figure = 9
+    required_sinr = 14
 
-    # Site throughput estimation (FDD, 100 MHz BW)
-    def calculate_site_throughput(scaling):
-        return 1e6 * 1 * 4 * scaling * 100 * 12 * 0.5 * 0.9 * (1 - 0.05)  # bps
+    freq_mhz = 3500
+    pl0 = 32.4
+    n = 3.3
 
-    site_throughput_bps = calculate_site_throughput(scaling_factor)
+    thermal_noise = -174 + 10 * math.log10(bandwidth_hz)
+    receiver_sensitivity = thermal_noise + noise_figure + required_sinr
+    mapl = (tx_power + tx_gain + rx_gain - cable_loss - penetration_loss - foliage_loss - body_loss
+            - interference_margin - rain_margin - shadow_margin - receiver_sensitivity)
+    numerator = mapl - pl0 - 20 * math.log10(freq_mhz)
+    denominator = 10 * n
+    r_km = 10 ** (numerator / denominator)
+    max_radius = 0.7
+    r_km = min(max(r_km, 0.05), max_radius)
+    coverage_radius_km = r_km * (1.0 if antenna_type == "Directive" else 1.2)
+    a_site = (1.94 if antenna_type == "Directive" else 2.5) * coverage_radius_km ** 2
+    num_sites_coverage = math.ceil(area_km2 / a_site)
 
-    # Capacity calculation
-    active_users = population * (penetration_rate / 100) * 0.8 * 1  # 80% share, 1 BHAU
-    traffic_per_user = 2e6  # 2 Mbps per user
-    required_capacity = active_users * traffic_per_user
+    active_users = population * (penetration_rate / 100)
+    total_traffic_mbps = active_users * traffic_per_user
 
-    # Calculate the number of sites based on required capacity
-    def calculate_capacity_sites(required_capacity, site_throughput_bps):
-        return math.ceil(required_capacity / site_throughput_bps)
+    subcarriers_per_rb = 12
+    symbols_per_slot = 14
+    slots_per_sec = 1000
+    coding_rate = 0.93
 
-    num_sites_capacity = calculate_capacity_sites(required_capacity, site_throughput_bps)
+    bps_per_sector = (
+        n_rb * subcarriers_per_rb * symbols_per_slot * slots_per_sec *
+        mod_order * coding_rate * mimo_layers * utilization * (1 - overhead)
+    )
 
-    # Display results after form submission
-    st.markdown("### 🧮 Results")
-    st.write(f"📍 **Location:** {country} > {city} > {area}")
-    st.write(f"📏 **Area to Cover:** {area_km2} km²")
-    st.write(f"📡 **Estimated Coverage Radius per Site:** {coverage_radius_km:.2f} km")
-    st.write(f"📏 **Ideal Inter-site Distance (ISD):** {coverage_radius_km * 2:.2f} km")
-    st.write(f"🗼 **Number of Sites Needed for Coverage:** {num_sites_coverage}")
-    st.write(f"📶 **Estimated Site Throughput:** {site_throughput_bps / 1e6:.2f} Mbps")
-    st.write(f"👥 **Active 5G Users:** {int(active_users)}")
-    st.write(f"🗼 **Number of Sites Needed for Capacity:** {num_sites_capacity}")
+    site_throughput_bps = bps_per_sector * sectors_per_site
+    site_throughput_mbps = site_throughput_bps / 1e6
+
+    num_sites_capacity = math.ceil(total_traffic_mbps / site_throughput_mbps)
+    total_sites_required = max(num_sites_coverage, num_sites_capacity)
+
+    st.header("📊 Results")
+    st.write(f"Coverage Radius per Site (R): {coverage_radius_km:.3f} km")
+    st.write(f"Area per Site: {a_site:.3f} km²")
+    st.write(f"Number of Sites Needed for Coverage: {num_sites_coverage}")
+    st.write(f"Active Users (Busy Hour): {int(active_users)}")
+    st.write(f"Total Traffic Demand: {total_traffic_mbps:.0f} Mbps")
+    st.write(f"Site Throughput: {site_throughput_mbps:.0f} Mbps")
+    st.write(f"Number of Sites Needed for Capacity: {num_sites_capacity}")
+    st.markdown("### 🔍 Final Recommendation")
+    st.write(f"Total Sites Required (Max of Coverage and Capacity): {total_sites_required}")
